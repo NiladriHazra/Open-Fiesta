@@ -29,7 +29,7 @@ export default function ThreadItem({
   return (
     <div
       data-menu-root={thread.id}
-      className={`w-full px-3 py-2.5 rounded-lg text-sm border flex items-center justify-between gap-2 group relative transition-all duration-200 ${
+      className={`w-full px-3 py-1.5 xl:py-2.5 rounded-lg text-sm border flex items-center justify-between gap-2 group relative transition-all duration-200 ${
         isActive
           ? 'bg-white/15 border-white/25 ring-1 ring-white/30 shadow-sm'
           : thread.pageType === 'home'

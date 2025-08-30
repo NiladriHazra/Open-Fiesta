@@ -215,7 +215,7 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, { hideInput?: boolean 
 
   return (
     <div className="relative h-full overflow-hidden">
-      <div className="absolute inset-0 overflow-y-auto" style={{ paddingBottom: hideInput ? "40px" : "200px" }}>
+      <div className="absolute inset-0 overflow-y-auto" style={{ paddingBottom: hideInput ? "80px" : "200px" }}>
         {messages.length > 0 ? (
           <div className="p-3 lg:p-4 space-y-4">
             <AnimatePresence>
@@ -348,7 +348,7 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, { hideInput?: boolean 
                 <motion.button
                   key={index}
                   onClick={() => handleExampleClick(prompt)}
-                  className={`group relative overflow-hidden inline-flex w-auto max-w-full text-left px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-sm lg:text-base font-medium transition-all duration-300 backdrop-blur-lg shadow-md hover:shadow-xl will-change-transform ${
+                  className={`group cursor-pointer relative overflow-hidden inline-flex w-auto max-w-full text-left px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-sm lg:text-base font-medium transition-all duration-300 backdrop-blur-lg shadow-md hover:shadow-xl will-change-transform ${
                     isDark
                       ? "text-white/85 hover:text-white bg-gradient-to-br from-black/35 via-black/25 to-black/15 border border-white/10 hover:border-white/20 ring-1 ring-red-400/10 hover:ring-red-400/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]"
                       : "text-orange-950/80 hover:text-orange-950 bg-gradient-to-br from-orange-50/80 to-orange-100/70 border border-orange-200/70 hover:border-orange-300"

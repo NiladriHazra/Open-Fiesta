@@ -20,8 +20,8 @@ export default function LogoutButton({ onClick, className }: LogoutButtonProps) 
       aria-label="Logout"
       className={cn(
         'group relative flex items-center justify-start overflow-hidden cursor-pointer transition-all duration-300 shadow-lg border border-white/20',
-        'w-12 h-12 rounded-xl',
-        'hover:w-32 hover:rounded-xl active:scale-95',
+        'w-10 h-10 xl:w-12 xl:h-12 rounded-md xl:rounded-xl',
+        'hover:w-24 xl:hover:w-32 hover:rounded-md xl:hover:rounded-xl active:scale-95',
         className,
       )}
       style={{ 

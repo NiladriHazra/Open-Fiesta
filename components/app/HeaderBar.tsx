@@ -6,6 +6,8 @@ import ThemeToggle from '@/components/ThemeToggle';
 import CustomModels from '@/components/modals/CustomModels';
 import Settings from '@/components/app/Settings';
 import { Layers, Home, Menu as MenuIcon } from 'lucide-react';
+import SupportDropdown from '../support-dropdown';
+import { useTheme } from '@/lib/themeContext';
 
 type Props = {
   onOpenMenu: () => void;
@@ -28,6 +30,7 @@ export default function HeaderBar({
   showCompareButton = false,
   hideHomeButton = false,
 }: Props) {
+    const { theme } = useTheme();
   return (
     <div className={['flex items-center mb-3 gap-2 w-full', className || ''].join(' ')}>
       {/* Left: menu + optional Compare button */}
@@ -86,6 +89,9 @@ export default function HeaderBar({
         <ThemeToggle compact />
         <Settings compact />
         <GithubStar owner={githubOwner} repo={githubRepo} />
+        <div >
+                  <SupportDropdown inline theme={theme.mode === 'dark' ? 'dark' : 'light'} />
+                </div>
       </div>
     </div>
   );

@@ -361,7 +361,7 @@ export default function Home() {
               {/* Right: Actions trigger (mobile) */}
               <div className="relative flex items-center gap-2">
                 {/* Inline Support button on mobile header */}
-                <div className="sm:hidden">
+                <div>
                   <SupportDropdown inline theme={theme.mode === 'dark' ? 'dark' : 'light'} />
                 </div>
                 <button
@@ -458,7 +458,7 @@ export default function Home() {
             )}
 
             {isHydrated && (
-              <div className="px-3 lg:px-4 pb-3">
+              <div className="px-3 lg:px-4">
                 <HomeAiInput
                   onSubmit={(text) => {
                     try { console.log('[Compare] HomeAiInput onSubmit:', text); } catch {}
@@ -488,11 +488,6 @@ export default function Home() {
         pauseOnHover
         theme="dark"
       />
-
-      {/* Support dropdown floating action at bottom-right (hidden on mobile) */}
-      <div className="hidden sm:block">
-        <SupportDropdown theme={theme.mode === 'dark' ? 'dark' : 'light'} />
-      </div>
 
       {/* Compare-only visual overrides */}
       <style jsx global>{`

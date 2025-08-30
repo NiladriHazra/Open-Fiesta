@@ -75,7 +75,7 @@ export default function ThreadSidebar({
     (user?.user_metadata?.picture as string | undefined) ||
     undefined;
   const initials = (displayName?.trim()?.charAt(0)?.toUpperCase() || 'U');
-   
+
   useEffect(() => {
     setIsHydrated(true);
   }, []);
@@ -85,22 +85,22 @@ export default function ThreadSidebar({
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    
-    const filteredThreads = threads.filter(thread => 
-      !searchQuery || 
+
+    const filteredThreads = threads.filter(thread =>
+      !searchQuery ||
       (thread.title || 'Untitled').toLowerCase().includes(searchQuery.toLowerCase())
     );
-    
+
     const groups = {
       today: [] as ChatThread[],
       yesterday: [] as ChatThread[],
       older: [] as ChatThread[]
     };
-    
+
     filteredThreads.forEach(thread => {
       const threadDate = new Date(thread.createdAt);
       const threadDay = new Date(threadDate.getFullYear(), threadDate.getMonth(), threadDate.getDate());
-      
+
       if (threadDay.getTime() === today.getTime()) {
         groups.today.push(thread);
       } else if (threadDay.getTime() === yesterday.getTime()) {
@@ -109,28 +109,27 @@ export default function ThreadSidebar({
         groups.older.push(thread);
       }
     });
-    
+
     return groups;
   }, [threads, searchQuery]);
 
   // Check for unused recent threads
   const hasUnusedRecentThread = useMemo(() => {
-    const recentThread = threads.find(t => 
-      (!t.messages || t.messages.length === 0) && 
-      (!t.title || t.title === 'Untitled') &&
-      Date.now() - t.createdAt < 5 * 60 * 1000 // Created within last 5 minutes
+    const recentThread = threads.find(t =>
+      (!t.messages || t.messages.length === 0) &&
+      (!t.title || t.title === 'New Chat')
     );
     return recentThread;
   }, [threads]);
 
   const handleThreadSelect = async (id: string) => {
     if (id === activeId) return;
-    
+
     setIsThreadSwitching(true);
-    
+
     // Small delay to show loading state
     await new Promise(resolve => setTimeout(resolve, 150));
-    
+
     onSelectThread(id);
     setIsThreadSwitching(false);
   };
@@ -159,15 +158,14 @@ export default function ThreadSidebar({
     document.addEventListener('click', onOutside);
     return () => document.removeEventListener('click', onOutside);
   }, [openMenuId]);
-  
+
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside
-        className={`relative hidden lg:flex shrink-0 h-[calc(100vh-2rem)] lg:h-[calc(100vh-3rem)] rounded-xl border border-white/10 backdrop-blur-xl bg-gradient-to-b from-black/40 via-black/30 to-black/20 shadow-2xl flex-col transition-[width] duration-300 ${
-          sidebarOpen ? 'w-72' : 'w-16'
-        }`}
+        className={`relative hidden lg:flex shrink-0 h-[calc(100vh-2rem)] lg:h-[calc(100vh-3rem)] rounded-xl border border-white/10 backdrop-blur-xl bg-gradient-to-b from-black/40 via-black/30 to-black/20 shadow-2xl flex-col transition-[width] duration-300 ${sidebarOpen ? 'w-72' : 'w-16'
+          }`}
       >
         {/* Collapse/Expand toggle */}
         <button
@@ -178,10 +176,9 @@ export default function ThreadSidebar({
           {sidebarOpen ? <ChevronLeft size={16} className="text-white/90" /> : <ChevronRight size={16} className="text-white/90" />}
         </button>
 
-        <div
-          className={`flex items-center justify-between mb-4 p-4 ${
-            sidebarOpen ? '' : 'opacity-0 pointer-events-none'
-          }`}
+        {sidebarOpen && <div
+          className={`flex items-center justify-between p-4 ${sidebarOpen ? '' : 'opacity-0 pointer-events-none'
+            }`}
         >
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -190,23 +187,23 @@ export default function ThreadSidebar({
             </div>
             <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Open Fiesta</h2>
           </div>
-        </div>
+        </div>}
         {/* Credits link under title */}
         {sidebarOpen && (
-          <div className="mb-6 px-4">
+          <div className="mb-4 px-4">
             <a
               href="https://x.com/byteHumi"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 rounded-xl px-3 py-2 bg-gradient-to-r from-white/8 to-white/4 border border-white/15 shadow-sm hover:border-white/25 hover:from-white/12 hover:to-white/6 hover:shadow-md transition-all duration-200 backdrop-blur-sm"
+              className="inline-flex items-center gap-3 rounded-lg xl:rounded-xl px-3 py-2 bg-gradient-to-r from-white/8 to-white/4 border border-white/15 shadow-sm hover:border-white/25 hover:from-white/12 hover:to-white/6 hover:shadow-md transition-all duration-200 backdrop-blur-sm"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/image.png"
                 alt="Niladri"
-                className="h-7 w-7 rounded-full ring-2 ring-white/20 object-cover shadow-sm"
+                className="h-5 w-5 xl:h-7 xl:w-7 rounded-full ring-2 ring-white/20 object-cover shadow-sm"
               />
-              <span className="text-sm text-white/90">
+              <span className="text-xs xl:text-sm text-white/90">
                 <span className="font-medium">Made by</span>
                 <span className="font-bold ml-1">Niladri</span>
               </span>
@@ -217,7 +214,7 @@ export default function ThreadSidebar({
         {/* Collapsed state - show image at the top */}
         {!sidebarOpen && (
           <div className="flex flex-col items-center pt-4">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center mb-6 ring-2 ring-white/15 shadow-lg bg-gradient-to-br from-white/10 to-white/5">
+            <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-xl overflow-hidden flex items-center justify-center mb-6 ring-2 ring-white/15 shadow-lg bg-gradient-to-br from-white/10 to-white/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/image.png" alt="Logo" className="h-full w-full object-cover" />
             </div>
@@ -226,179 +223,183 @@ export default function ThreadSidebar({
 
         {sidebarOpen ? (
           <>
-            {/* Projects Section */}
-            <div className="mb-6 px-4">
-              <ProjectsSection
-                projects={projects}
-                activeProjectId={activeProjectId}
-                onSelectProject={onSelectProject}
-                onCreateProject={onCreateProject}
-                onUpdateProject={onUpdateProject}
-                onDeleteProject={onDeleteProject}
-                collapsed={false}
-              />
-            </div>
-
-            {/* Search Bar */}
-            <div className="mb-6 px-4">
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50 group-focus-within:text-white/70 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Search threads..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-10 py-3 bg-white/8 border border-white/15 rounded-xl text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 focus:bg-white/12 transition-all duration-200 backdrop-blur-sm"
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+              {/* Projects Section */}
+              <div className="mb-6 px-4">
+                <ProjectsSection
+                  projects={projects}
+                  activeProjectId={activeProjectId}
+                  onSelectProject={onSelectProject}
+                  onCreateProject={onCreateProject}
+                  onUpdateProject={onUpdateProject}
+                  onDeleteProject={onDeleteProject}
+                  collapsed={false}
                 />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors p-1 rounded-md hover:bg-white/10"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
               </div>
-            </div>
 
-            {/* New Chat */}
-            <div className="mb-6 px-4">
-              <button
-                onClick={handleNewChat}
-                className="w-full text-sm font-semibold px-4 py-3 rounded-xl shadow-lg text-white bg-gradient-to-r hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20"
-                style={{ 
-                  backgroundImage: `linear-gradient(135deg, ${accent.primary}, ${accent.primary}dd)`,
-                }}
-              >
-                <Plus className="inline-block w-4 h-4 mr-2" />
-                New Chat
-              </button>
-            </div>
-            {/* Loading state for thread switching */}
-            {isThreadSwitching && (
-              <div className="flex items-center justify-center py-4">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent.primary }}></div>
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent.primary, animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent.primary, animationDelay: '0.2s' }}></div>
+              {/* Search Bar */}
+              <div className="mb-3 xl:mb-6 px-4">
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50 group-focus-within:text-white/70 transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Search threads..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-10 py-2 xl:py-3 bg-white/8 border border-white/15 rounded-lg xl:rounded-xl text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 focus:bg-white/12 transition-all duration-200 backdrop-blur-sm"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors p-1 rounded-md hover:bg-white/10"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
-            )}
 
-            <div className="flex-1 overflow-y-auto space-y-3 px-4 min-h-0">
-              {!isHydrated ? (
-                <div className="text-xs opacity-60">Loading...</div>
-              ) : threads.length === 0 ? (
-                <div className="text-xs opacity-60">No chats yet</div>
-              ) : searchQuery && Object.values(groupedThreads).every(group => group.length === 0) ? (
-                <div className="text-xs opacity-60 text-center py-4">No threads found</div>
-              ) : null}
-
-              {isHydrated && (
-                <>
-                  {/* Today */}
-                  {groupedThreads.today.length > 0 && (
-                    <div className="mb-4">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Today</div>
-                      <div className="space-y-1">
-                        {groupedThreads.today.map((t) => (
-                          <ThreadItem
-                            key={t.id}
-                            thread={t}
-                            isActive={t.id === activeId}
-                            onSelect={() => {
-                              if (t.pageType === 'compare') {
-                                window.location.href = '/compare';
-                              } else {
-                                handleThreadSelect(t.id);
-                              }
-                            }}
-                            onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
-                            isMenuOpen={openMenuId === t.id}
-                            onDelete={(id) => {
-                              setOpenMenuId(null);
-                              setConfirmDeleteId(id);
-                            }}
-                            projects={projects}
-                            selectedModels={selectedModels}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Yesterday */}
-                  {groupedThreads.yesterday.length > 0 && (
-                    <div className="mb-4">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Yesterday</div>
-                      <div className="space-y-1">
-                        {groupedThreads.yesterday.map((t) => (
-                          <ThreadItem
-                            key={t.id}
-                            thread={t}
-                            isActive={t.id === activeId}
-                            onSelect={() => {
-                              if (t.pageType === 'compare') {
-                                window.location.href = '/compare';
-                              } else {
-                                handleThreadSelect(t.id);
-                              }
-                            }}
-                            onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
-                            isMenuOpen={openMenuId === t.id}
-                            onDelete={(id) => {
-                              setOpenMenuId(null);
-                              setConfirmDeleteId(id);
-                            }}
-                            projects={projects}
-                            selectedModels={selectedModels}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Older */}
-                  {groupedThreads.older.length > 0 && (
-                    <div className="mb-4">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Older</div>
-                      <div className="space-y-1">
-                        {groupedThreads.older.map((t) => (
-                          <ThreadItem
-                            key={t.id}
-                            thread={t}
-                            isActive={t.id === activeId}
-                            onSelect={() => {
-                              if (t.pageType === 'compare') {
-                                window.location.href = '/compare';
-                              } else {
-                                handleThreadSelect(t.id);
-                              }
-                            }}
-                            onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
-                            isMenuOpen={openMenuId === t.id}
-                            onDelete={(id) => {
-                              setOpenMenuId(null);
-                              setConfirmDeleteId(id);
-                            }}
-                            projects={projects}
-                            selectedModels={selectedModels}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
+              {/* New Chat */}
+              <div className="mb-4 px-4">
+                <button
+                  onClick={handleNewChat}
+                  className="w-full text-sm font-semibold px-4 py-2 xl:py-3 rounded-lg xl:rounded-xl shadow-lg text-white bg-gradient-to-r hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${accent.primary}, ${accent.primary}dd)`,
+                  }}
+                >
+                  <Plus className="inline-block w-4 h-4 mr-2" />
+                  New Chat
+                </button>
+              </div>
+              {/* Loading state for thread switching */}
+              {isThreadSwitching && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent.primary }}></div>
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent.primary, animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accent.primary, animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
               )}
-            </div>
 
+              <div className="flex-1 space-y-3 px-4 min-h-0">
+                {!isHydrated ? (
+                  <div className="text-xs opacity-60">Loading...</div>
+                ) : threads.length === 0 ? (
+                  <div className="text-xs opacity-60">No chats yet</div>
+                ) : searchQuery && Object.values(groupedThreads).every(group => group.length === 0) ? (
+                  <div className="text-xs opacity-60 text-center py-4">No threads found</div>
+                ) : null}
+
+                {isHydrated && (
+                  <>
+                    {/* Today */}
+                    {groupedThreads.today.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Today</div>
+                        <div className="space-y-1">
+                          {groupedThreads.today.map((t) => (
+                            <ThreadItem
+                              key={t.id}
+                              thread={t}
+                              isActive={t.id === activeId}
+                              onSelect={() => {
+                                if (t.pageType === 'compare') {
+                                  window.location.href = '/compare';
+                                } else {
+                                  handleThreadSelect(t.id);
+                                }
+                              }}
+                              onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
+                              isMenuOpen={openMenuId === t.id}
+                              onDelete={(id) => {
+                                setOpenMenuId(null);
+                                setConfirmDeleteId(id);
+                              }}
+                              projects={projects}
+                              selectedModels={selectedModels}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Yesterday */}
+                    {groupedThreads.yesterday.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Yesterday</div>
+                        <div className="space-y-1">
+                          {groupedThreads.yesterday.map((t) => (
+                            <ThreadItem
+                              key={t.id}
+                              thread={t}
+                              isActive={t.id === activeId}
+                              onSelect={() => {
+                                if (t.pageType === 'compare') {
+                                  window.location.href = '/compare';
+                                } else {
+                                  handleThreadSelect(t.id);
+                                }
+                              }}
+                              onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
+                              isMenuOpen={openMenuId === t.id}
+                              onDelete={(id) => {
+                                setOpenMenuId(null);
+                                setConfirmDeleteId(id);
+                              }}
+                              projects={projects}
+                              selectedModels={selectedModels}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Older */}
+                    {groupedThreads.older.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Older</div>
+                        <div className="space-y-1">
+                          {groupedThreads.older.map((t) => (
+                            <ThreadItem
+                              key={t.id}
+                              thread={t}
+                              isActive={t.id === activeId}
+                              onSelect={() => {
+                                if (t.pageType === 'compare') {
+                                  window.location.href = '/compare';
+                                } else {
+                                  handleThreadSelect(t.id);
+                                }
+                              }}
+                              onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
+                              isMenuOpen={openMenuId === t.id}
+                              onDelete={(id) => {
+                                setOpenMenuId(null);
+                                setConfirmDeleteId(id);
+                              }}
+                              projects={projects}
+                              selectedModels={selectedModels}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+
+            </div>
             {/* Footer: Auth / User info */}
             <div className="mt-auto pt-4 pb-4 px-4 border-t border-white/15 shrink-0">
               <AuthButton />
             </div>
           </>
+
         ) : (
-          <div className="flex-1 flex flex-col items-center pt-6">
+          <div className="flex-1 overflow-y-hidden flex flex-col items-center pt-4">
             {/* Projects Section (Collapsed) */}
             <div className="mb-4 w-full">
               <ProjectsSection
@@ -416,8 +417,8 @@ export default function ThreadSidebar({
             <button
               title="New Chat"
               onClick={handleNewChat}
-              className="h-10 w-10 rounded-xl flex items-center justify-center mb-6 mx-auto shrink-0 transition-all duration-200 hover:scale-110 shadow-lg border border-white/20"
-              style={{ 
+              className="w-8 h-8 xl:h-10 xl:w-10 rounded-lg xl:rounded-xl cursor-pointer flex items-center justify-center mb-6 mx-auto shrink-0 transition-all duration-200 hover:scale-110 shadow-lg border border-white/20"
+              style={{
                 background: `linear-gradient(135deg, ${accent.primary}, ${accent.primary}dd)`,
               }}
             >
@@ -425,7 +426,7 @@ export default function ThreadSidebar({
             </button>
 
             {/* Mini threads */}
-            <div className="flex-1 overflow-y-auto w-full flex flex-col items-center gap-2 pt-1 pb-2 min-h-0">
+            <div className="flex-1 overflow-y-hidden w-full flex flex-col items-center gap-2 pt-1 pb-2 min-h-0">
               {threads.map((t) => {
                 const isActive = t.id === activeId;
                 const letter = (t.title || 'Untitled').trim()[0]?.toUpperCase() || 'N';
@@ -435,10 +436,9 @@ export default function ThreadSidebar({
                     title={t.title || 'Untitled'}
                     onClick={() => handleThreadSelect(t.id)}
                     className={`h-6 w-6 aspect-square rounded-full flex items-center justify-center transition-all duration-200 mx-auto shrink-0 hover:scale-110
-                      ${
-                        isActive
-                          ? 'bg-white/20 ring-1 ring-white/30 ring-offset-1 ring-offset-black'
-                          : 'bg-white/5 hover:bg-white/10'
+                      ${isActive
+                        ? 'bg-white/20 ring-1 ring-white/30 ring-offset-1 ring-offset-black'
+                        : 'bg-white/5 hover:bg-white/10'
                       }`}
                   >
                     <span className="text-[10px] font-semibold leading-none">{letter}</span>
@@ -490,181 +490,180 @@ export default function ThreadSidebar({
                 href="https://x.com/byteHumi"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 rounded-xl px-3 py-2 bg-gradient-to-r from-white/8 to-white/4 border border-white/15 shadow-sm hover:border-white/25 hover:from-white/12 hover:to-white/6 hover:shadow-md transition-all duration-200 backdrop-blur-sm"
+                className="inline-flex items-center gap-3 rounded-lg px-3 py-2 bg-gradient-to-r from-white/8 to-white/4 border border-white/15 shadow-sm hover:border-white/25 hover:from-white/12 hover:to-white/6 hover:shadow-md transition-all duration-200 backdrop-blur-sm"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/image.png"
                   alt="Niladri"
-                  className="h-7 w-7 rounded-full ring-2 ring-white/20 object-cover shadow-sm"
+                  className="h-5 w-5 xl:h-7 xl:w-7 rounded-full ring-2 ring-white/20 object-cover shadow-sm"
                 />
-                <span className="text-sm text-white/90">
+                <span className="text-xs xl:text-sm text-white/90">
                   <span className="font-medium">Made by</span>
                   <span className="font-bold ml-1">Niladri</span>
                 </span>
               </a>
             </div>
-
-            <div className="mb-4">
-              <ProjectsSection
-                projects={projects}
-                activeProjectId={activeProjectId}
-                onSelectProject={(id) => {
-                  if (id) {
-                    onSelectProject(id);
-                  }
-                }}
-                onCreateProject={onCreateProject}
-                onUpdateProject={onUpdateProject}
-                onDeleteProject={onDeleteProject}
-                collapsed={false}
-              />
-            </div>
-
-            {/* Search Bar (Mobile) */}
-            <div className="mb-6">
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50 group-focus-within:text-white/70 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Search threads..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-10 py-3 bg-white/8 border border-white/15 rounded-xl text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 focus:bg-white/12 transition-all duration-200 backdrop-blur-sm"
+            <div className="flex-1 flex flex-col max-h-[76vh] overflow-y-auto">
+              <div className="mb-4">
+                <ProjectsSection
+                  projects={projects}
+                  activeProjectId={activeProjectId}
+                  onSelectProject={(id) => {
+                    if (id) {
+                      onSelectProject(id);
+                    }
+                  }}
+                  onCreateProject={onCreateProject}
+                  onUpdateProject={onUpdateProject}
+                  onDeleteProject={onDeleteProject}
+                  collapsed={false}
                 />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors p-1 rounded-md hover:bg-white/10"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+              </div>
+              {/* Search Bar (Mobile) */}
+              <div className="mb-4">
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50 group-focus-within:text-white/70 transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Search threads..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-10 py-2 bg-white/8 border border-white/15 rounded-md text-xs text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 focus:bg-white/12 transition-all duration-200 backdrop-blur-sm"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors p-1 rounded-md hover:bg-white/10"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    handleNewChat();
+                    onCloseMobile();
+                  }}
+                  className="w-full text-sm font-semibold px-4 py-2 xl:py-3 rounded-md xl:rounded-xl shadow-lg text-white bg-gradient-to-r hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20"
+                  style={{ backgroundImage: `linear-gradient(135deg, ${accent.primary}, ${accent.primary}dd)` }}
+                >
+                  <Plus className="inline-block w-4 h-4 mr-2" />
+                  New Chat
+                </button>
+              </div>
+
+              <div className="h-[65vh] space-y-2 pr-1">
+                {threads.length === 0 ? (
+                  <div className="text-xs opacity-60">No chats yet</div>
+                ) : searchQuery && Object.values(groupedThreads).every(group => group.length === 0) ? (
+                  <div className="text-xs opacity-60 text-center py-4">No threads found</div>
+                ) : (
+                  <>
+                    {/* Today */}
+                    {groupedThreads.today.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Today</div>
+                        <div className="space-y-2">
+                          {groupedThreads.today.map((t) => (
+                            <ThreadItem
+                              key={t.id}
+                              thread={t}
+                              isActive={t.id === activeId}
+                              onSelect={() => {
+                                if (t.pageType === 'compare') {
+                                  window.location.href = '/compare';
+                                } else {
+                                  handleThreadSelect(t.id);
+                                }
+                                onCloseMobile();
+                              }}
+                              onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
+                              isMenuOpen={openMenuId === t.id}
+                              onDelete={(id) => {
+                                setOpenMenuId(null);
+                                setConfirmDeleteId(id);
+                              }}
+                              projects={projects}
+                              selectedModels={selectedModels}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Yesterday */}
+                    {groupedThreads.yesterday.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Yesterday</div>
+                        <div className="space-y-2">
+                          {groupedThreads.yesterday.map((t) => (
+                            <ThreadItem
+                              key={t.id}
+                              thread={t}
+                              isActive={t.id === activeId}
+                              onSelect={() => {
+                                if (t.pageType === 'compare') {
+                                  window.location.href = '/compare';
+                                } else {
+                                  handleThreadSelect(t.id);
+                                }
+                                onCloseMobile();
+                              }}
+                              onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
+                              isMenuOpen={openMenuId === t.id}
+                              onDelete={(id) => {
+                                setOpenMenuId(null);
+                                setConfirmDeleteId(id);
+                              }}
+                              projects={projects}
+                              selectedModels={selectedModels}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Older */}
+                    {groupedThreads.older.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Older</div>
+                        <div className="space-y-2">
+                          {groupedThreads.older.map((t) => (
+                            <ThreadItem
+                              key={t.id}
+                              thread={t}
+                              isActive={t.id === activeId}
+                              onSelect={() => {
+                                if (t.pageType === 'compare') {
+                                  window.location.href = '/compare';
+                                } else {
+                                  handleThreadSelect(t.id);
+                                }
+                                onCloseMobile();
+                              }}
+                              onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
+                              isMenuOpen={openMenuId === t.id}
+                              onDelete={(id) => {
+                                setOpenMenuId(null);
+                                setConfirmDeleteId(id);
+                              }}
+                              projects={projects}
+                              selectedModels={selectedModels}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
 
-            <div className="mb-6">
-              <button
-                onClick={() => {
-                  handleNewChat();
-                  onCloseMobile();
-                }}
-                className="w-full text-sm font-semibold px-4 py-3 rounded-xl shadow-lg text-white bg-gradient-to-r hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20"
-                style={{ backgroundImage: `linear-gradient(135deg, ${accent.primary}, ${accent.primary}dd)` }}
-              >
-                <Plus className="inline-block w-4 h-4 mr-2" />
-                New Chat
-              </button>
-            </div>
-
-            <div className="h-[65vh] overflow-y-auto space-y-2 pr-1">
-              {threads.length === 0 ? (
-                <div className="text-xs opacity-60">No chats yet</div>
-              ) : searchQuery && Object.values(groupedThreads).every(group => group.length === 0) ? (
-                <div className="text-xs opacity-60 text-center py-4">No threads found</div>
-              ) : (
-                <>
-                  {/* Today */}
-                  {groupedThreads.today.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Today</div>
-                      <div className="space-y-2">
-                        {groupedThreads.today.map((t) => (
-                          <ThreadItem
-                            key={t.id}
-                            thread={t}
-                            isActive={t.id === activeId}
-                            onSelect={() => {
-                              if (t.pageType === 'compare') {
-                                window.location.href = '/compare';
-                              } else {
-                                handleThreadSelect(t.id);
-                              }
-                              onCloseMobile();
-                            }}
-                            onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
-                            isMenuOpen={openMenuId === t.id}
-                            onDelete={(id) => {
-                              setOpenMenuId(null);
-                              setConfirmDeleteId(id);
-                            }}
-                            projects={projects}
-                            selectedModels={selectedModels}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Yesterday */}
-                  {groupedThreads.yesterday.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Yesterday</div>
-                      <div className="space-y-2">
-                        {groupedThreads.yesterday.map((t) => (
-                          <ThreadItem
-                            key={t.id}
-                            thread={t}
-                            isActive={t.id === activeId}
-                            onSelect={() => {
-                              if (t.pageType === 'compare') {
-                                window.location.href = '/compare';
-                              } else {
-                                handleThreadSelect(t.id);
-                              }
-                              onCloseMobile();
-                            }}
-                            onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
-                            isMenuOpen={openMenuId === t.id}
-                            onDelete={(id) => {
-                              setOpenMenuId(null);
-                              setConfirmDeleteId(id);
-                            }}
-                            projects={projects}
-                            selectedModels={selectedModels}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Older */}
-                  {groupedThreads.older.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-3 px-2">Older</div>
-                      <div className="space-y-2">
-                        {groupedThreads.older.map((t) => (
-                          <ThreadItem
-                            key={t.id}
-                            thread={t}
-                            isActive={t.id === activeId}
-                            onSelect={() => {
-                              if (t.pageType === 'compare') {
-                                window.location.href = '/compare';
-                              } else {
-                                handleThreadSelect(t.id);
-                              }
-                              onCloseMobile();
-                            }}
-                            onMenuToggle={(id) => setOpenMenuId(prev => prev === id ? null : id)}
-                            isMenuOpen={openMenuId === t.id}
-                            onDelete={(id) => {
-                              setOpenMenuId(null);
-                              setConfirmDeleteId(id);
-                            }}
-                            projects={projects}
-                            selectedModels={selectedModels}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
             {/* Footer: Auth / User info (mobile) */}
-            <div className="mt-3 pt-3 pb-3 border-t border-white/10">
+            <div className="absolute bg-black left-0 bottom-0 w-80 max-w-[85vw] p-4 border-t border-white/10">
               <AuthButton />
             </div>
           </div>

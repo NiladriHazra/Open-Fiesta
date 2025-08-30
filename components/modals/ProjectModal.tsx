@@ -96,7 +96,7 @@ export default function ProjectModal({ open, onClose, onSave, project = null }: 
         onKeyDown={handleKeyDown}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-4 lg:py-2 border-b border-white/10">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
           <button
             onClick={onClose}
@@ -125,7 +125,7 @@ export default function ProjectModal({ open, onClose, onSave, project = null }: 
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Enter a name for your project (max 50 characters)"
-              className={`w-full px-3 py-2 bg-white/5 border rounded-md text-white placeholder-white/40 focus:outline-none focus:ring-2 transition-colors ${
+              className={`w-full px-3 py-2 text-sm bg-white/5 border rounded-md text-white placeholder-white/40 focus:outline-none focus:ring-2 transition-colors ${
                 nameError
                   ? 'border-red-400 focus:ring-red-400/50'
                   : 'border-white/20 focus:border-white/30 focus:ring-[var(--accent-interactive-primary)]/50'
@@ -148,7 +148,7 @@ export default function ProjectModal({ open, onClose, onSave, project = null }: 
               onChange={(e) => handlePromptChange(e.target.value)}
               placeholder="Enter a system prompt for chats in this project (max 1000 characters)"
               rows={6}
-              className={`w-full px-3 py-2 bg-white/5 border rounded-md text-white placeholder-white/40 resize-none focus:outline-none focus:ring-2 transition-colors ${
+              className={`w-full px-3 py-2 bg-white/5 text-sm border rounded-md text-white placeholder-white/40 resize-none focus:outline-none focus:ring-2 transition-colors ${
                 promptError
                   ? 'border-red-400 focus:ring-red-400/50'
                   : 'border-white/20 focus:border-white/30 focus:ring-[var(--accent-interactive-primary)]/50'
