@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { motion, Variants, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import ScrollCards from '@/components/ScrollCards';
+import { useRouter } from 'next/navigation';
 
 const containerVariants: Variants = {
   hidden: {},
@@ -35,6 +36,11 @@ export default function Page() {
   const [showSplash, setShowSplash] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const handleClick = (prompt: string) => {
+    router.push(`/chat?prompt=${encodeURIComponent(prompt)}`);
+  };
   useEffect(() => {
     setIsHydrated(true);
     const t = setTimeout(() => setShowSplash(false), 350);
@@ -476,6 +482,7 @@ export default function Page() {
             {examplePrompts.map((prompt, index) => (
               <div
                 key={index}
+                onClick={()=>handleClick(prompt)}
                 className="bg-black/20 hover:scale-105 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4 sm:p-6 hover:bg-black/30 hover:border-red-900 transition-all cursor-pointer group"
               >
                 <p className="text-gray-200 group-hover:text-white transition-colors text-sm sm:text-base">

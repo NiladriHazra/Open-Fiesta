@@ -39,11 +39,14 @@ import { BACKGROUND_STYLES } from '@/lib/themes'
 import SupportDropdown from '@/components/support-dropdown'
 import ProjectModal from '@/components/modals/ProjectModal'
 import { Project } from '@/lib/projects'
+import { useSearchParams } from "next/navigation";
 
 export default function OpenFiestaChat() {
   const { user } = useAuth()
   const { theme } = useTheme()
   const isDark = theme.mode === 'dark'
+  const searchParams = useSearchParams();
+  const promptfromUrl = searchParams.get('prompt') || '';
   
   const guestMode = (process.env.NODE_ENV !== 'production') && (process.env.NEXT_PUBLIC_GUEST_MODE === 'true')
   if (process.env.NEXT_PUBLIC_GUEST_MODE === 'true' && process.env.NODE_ENV === 'production') {
@@ -403,6 +406,13 @@ export default function OpenFiestaChat() {
     }
   }, [activeThread]);
 
+  useEffect(() => {
+  if (promptfromUrl) {
+    handleSubmit(promptfromUrl)
+  }
+}, [promptfromUrl])
+
+
   return (
     <div className={cn("min-h-screen w-full relative", isDark ? "dark" : "")}> 
       {/* SEO: Primary page heading for branded queries */}
@@ -643,7 +653,7 @@ export default function OpenFiestaChat() {
                   modelSelectorLabel={selectedHomeModel ? selectedHomeModel.label : "Choose model"}
                   onOpenModelSelector={() => setModelModalOpen(true)}
                   onSubmit={handleSubmit}
-                  initialValue={editingMessage}
+                  initialValue={editingMessage || promptfromUrl}
                   onClear={() => setEditingMessage('')}
                 />
               </div>
