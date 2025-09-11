@@ -135,7 +135,7 @@ if (rect) {
 }, [features.length, threshold, animationDuration]);
 
   return (
-    <div ref={containerRef} className={`h-[600px] flex items-center justify-center overflow-hidden border border-white/10 backdrop-blur-md bg-gray/10 shadow-2xl`}>
+    <div ref={containerRef} className={`h-[600px] flex items-center justify-center mt-8 overflow-hidden border border-white/10 backdrop-blur-md bg-red-400/10 shadow-2xl rounded-3xl`}>
       <div className={`relative w-full max-w-md`} style={{ touchAction: 'none' }}>
         <AnimatePresence mode="wait">
           <motion.div 
