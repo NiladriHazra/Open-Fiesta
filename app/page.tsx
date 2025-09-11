@@ -1,428 +1,168 @@
-"use client"
+'use client';
 
-// Extend Window interface for ChatInterface handlers
-declare global {
-  interface Window {
-    handleEditMessage?: (messageId: string, content: string) => void;
-    handleShareMessage?: (message: ChatMessage) => void;
-    handleSubmit?: (text: string) => Promise<void>;
-  }
-}
+import Image from 'next/image';
+import { useTheme } from '@/lib/themeContext';
+import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+import { BACKGROUND_STYLES } from '@/lib/themes';
+import LaunchScreen from '@/components/ui/LaunchScreen';
+import Link from 'next/link';
+import { motion, Variants, useInView } from 'framer-motion';
+import { useRef } from 'react';
+import ScrollCards from '@/components/ScrollCards';
+import { useRouter } from 'next/navigation';
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react"
-import { useLocalStorage } from '@/lib/useLocalStorage';
-import { mergeModels, useCustomModels } from '@/lib/customModels';
-import { ChatMessage, ApiKeys, ChatThread, AiModel } from '@/lib/types';
-import { useProjects } from '@/lib/useProjects';
-import ModelsModal from '@/components/modals/ModelsModal';
-import { ChatInterface, ChatInterfaceRef } from '@/components/chat-interface';
-import { useAuth } from '@/lib/auth';
-import AuthModal from '@/components/modals/AuthModal';
-import { cn } from '@/lib/utils'
-import ThreadSidebar from '@/components/chat/ThreadSidebar'
-import HomeAiInput from '@/components/home/HomeAiInput'
-import { fetchThreads, createThread as createThreadDb, addMessage as addMessageDb, deleteThread as deleteThreadDb } from '@/lib/db'
-import { createChatActions } from '@/lib/chatActions'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import { Layers } from 'lucide-react'
-import Link from 'next/link'
-import GithubStar from '@/components/app/GithubStar'
-import ThemeToggle from '@/components/ThemeToggle'
-import CustomModels from '@/components/modals/CustomModels'
-import Settings from '@/components/app/Settings'
-import HeaderBar from '@/components/app/HeaderBar'
-import FirstVisitNote from '@/components/app/FirstVisitNote'
-import LaunchScreen from '@/components/ui/LaunchScreen'
-import { useTheme } from '@/lib/themeContext'
-import { BACKGROUND_STYLES } from '@/lib/themes'
-import SupportDropdown from '@/components/support-dropdown'
-import ProjectModal from '@/components/modals/ProjectModal'
-import { Project } from '@/lib/projects'
+const containerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.3, // delay between children
+    },
+  },
+};
 
-export default function OpenFiestaChat() {
-  const { user } = useAuth()
-  const { theme } = useTheme()
-  const isDark = theme.mode === 'dark'
-  
-  const guestMode = (process.env.NODE_ENV !== 'production') && (process.env.NEXT_PUBLIC_GUEST_MODE === 'true')
-  if (process.env.NEXT_PUBLIC_GUEST_MODE === 'true' && process.env.NODE_ENV === 'production') {
-    if (typeof window !== 'undefined') {
-      // eslint-disable-next-line no-console
-      console.warn('[GuestMode] Ignored in production build.')
-    }
-  }
-  const [isHydrated, setIsHydrated] = useState(false)
-  const [showSplash, setShowSplash] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const [mobileActionsOpen, setMobileActionsOpen] = useState(false)
-  const [modelModalOpen, setModelModalOpen] = useState(false)
-  const [authModalOpen, setAuthModalOpen] = useState(false)
-  const [projectModalOpen, setProjectModalOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [threads, setThreads] = useLocalStorage<ChatThread[]>('ai-fiesta:threads', [])
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
-  const [editingMessage, setEditingMessage] = useState<string>('')
-  const [apiKeys] = useLocalStorage<ApiKeys>('ai-fiesta:api-keys', {})
-  const [customModels] = useCustomModels()
-  const [selectedHomeModelId, setSelectedHomeModelId] = useLocalStorage<string>('ai-fiesta:selected-home-model', 'open-evil')
-  // First-visit modal
-  const [firstVisitSeen, setFirstVisitSeen] = useLocalStorage<boolean>('ai-fiesta:first-visit-seen', false)
-  const [showFirstVisit, setShowFirstVisit] = useState<boolean>(() => !firstVisitSeen)
-  
-  const {
-    projects,
-    activeProjectId,
-    createProject,
-    updateProject,
-    deleteProject,
-    selectProject,
-  } = useProjects()
-  
-  // Project modal handlers
-  const handleCreateProject = () => {
-    setEditingProject(null)
-    setProjectModalOpen(true)
-  }
-  
-  const handleEditProject = (project: Project) => {
-    setEditingProject(project)
-    setProjectModalOpen(true)
-  }
-  
-  const handleSaveProject = (project: Project) => {
-    if (editingProject) {
-      updateProject(project)
-    } else {
-      createProject(project)
-    }
-    setEditingProject(null)
-    setProjectModalOpen(false)
-  }
-  
-  const visibleHomeThreads = useMemo(() => threads.filter(t => t.pageType === 'home' && (!activeProjectId || t.projectId === activeProjectId)), [threads, activeProjectId])
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: 'easeOut' },
+  },
+};
 
-  const activeThread = useMemo(() => threads.find((t) => t.id === activeThreadId), [threads, activeThreadId])
-  const allModels = useMemo(() => mergeModels(customModels), [customModels])
-  const selectedHomeModel: AiModel | undefined = useMemo(
-    () => allModels.find((m) => m.id === selectedHomeModelId) || allModels[0],
-    [allModels, selectedHomeModelId]
-  )
-  
-  // Auto-select first model if none selected
+export default function Page() {
+  const { theme } = useTheme();
+  const isDark = theme.mode === 'dark';
+  const [showSplash, setShowSplash] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const handleClick = (prompt: string) => {
+    router.push(`/chat?prompt=${encodeURIComponent(prompt)}`);
+  };
   useEffect(() => {
-    if (!selectedHomeModelId && allModels.length > 0) {
-      setSelectedHomeModelId(allModels[0].id);
-    }
-  }, [selectedHomeModelId, allModels, setSelectedHomeModelId])
+    setIsHydrated(true);
+    const t = setTimeout(() => setShowSplash(false), 350);
+    return () => clearTimeout(t);
+  }, []);
 
-  // Splash timing like compare
-  useEffect(() => {
-    setIsHydrated(true)
-    const t = setTimeout(() => setShowSplash(false), 350)
-    return () => clearTimeout(t)
-  }, [])
+  const features = [
+  {
+    id: 1,
+    icon: '🚀',
+    title: 'Access 300+ Premium AI Models Instantly',
+    description:
+      'Connect to industry-leading AI models including GPT-4, Claude 3.5 Sonnet, Gemini Pro, DeepSeek, Grok, LLaMA, and hundreds more through a single, unified interface. No need to juggle multiple accounts or platforms.',
+  },
+  {
+    id: 2,
+    icon: '🔐',
+    title: 'Bank-Grade Security & Complete Privacy',
+    description: 'Your API keys and conversations remain 100% private with local browser storage. Zero server uploads, zero data mining, zero compromises. Your sensitive information never leaves your device.',
+  },
+  {
+    id: 3,
+    icon: '⚡',
+    title: 'Pre-Configured Professional API Keys',
+    description: 'Skip the setup hassle with our built-in premium API keys. Start chatting with top-tier AI models immediately without creating accounts or managing billing across multiple services.',
+  },
+  {
+    id: 4,
+    icon: '🔄',
+    title: 'Advanced Side-by-Side Model Comparison',
+    description: 'Run identical prompts across multiple AI models simultaneously and compare responses in real-time. Perfect for finding the optimal model for coding, writing, analysis, or creative tasks.',
+  },
+  {
+    id: 5,
+    icon: '🌐',
+    title: 'Real-Time Web Search Integration',
+    description: 'Enhance AI responses with live web search capabilities. Get up-to-date information, current events, and recent data seamlessly integrated into your conversations for more accurate and relevant answers.',
+  },
+  {
+    id: 6,
+    icon: '📷',
+    title: 'Advanced Vision & Image Analysis',
+    description: 'Upload and analyze images, screenshots, documents, and diagrams with vision-enabled AI models. Perfect for code review, design feedback, document analysis, and visual problem-solving.',
+  },
+];
 
-  // Keep showFirstVisit in sync with storage
-  useEffect(() => {
-    setShowFirstVisit(!firstVisitSeen)
-  }, [firstVisitSeen])
+  const techStack = [
+    { name: 'Next.js', icon: '⚛️' },
+    { name: 'TypeScript', icon: '📘' },
+    { name: 'Tailwind CSS', icon: '🎨' },
+    { name: 'Docker', icon: '🐳' },
+    { name: 'Supabase', icon: '⚡' },
+    { name: 'Open Source', icon: '🔓' },
+  ];
 
-  const chatRef = useRef<ChatInterfaceRef | null>(null)
+  const examplePrompts = [
+    'Write a haiku about Monday mornings',
+    "Explain quantum physics like I'm a golden retriever",
+    'Create a marketing strategy for a sustainable fashion brand',
+    'Debug this Python code and suggest improvements',
+    'Generate a creative story about time travel',
+    'Compare the pros and cons of different cloud providers',
+  ];
 
-  // Create chat actions for handling AI responses - unused but kept for potential future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const chatActions = useMemo(() => {
-    if (!activeThread) {
-      return null;
-    }
-    return createChatActions({
-      threads,
-      setThreads,
-      activeThread,
-      setActiveId: setActiveThreadId,
-      setLoadingIds: () => {}, // Disabled - using ChatInterface loading instead
-      setLoadingIdsInit: () => {}, // Disabled - using ChatInterface loading instead
-      selectedModels: selectedHomeModel ? [selectedHomeModel] : [],
-      keys: apiKeys,
-      userId: user?.id || undefined,
-    })
-  }, [activeThread, selectedHomeModel, apiKeys, user?.id, threads, setThreads])
+  const chooseOpenFiesta = [
+    {
+      icon: '⚡',
+      title: 'Efficiency',
+      description: 'Skip managing multiple API accounts—access everything in one place',
+    },
+    {
+      icon: '🔒',
+      title: 'Security',
+      description: 'Your API keys stay local—never uploaded to our servers',
+    },
+    {
+      icon: '🎯',
+      title: 'Flexibility',
+      description: 'Choose built-in keys or bring your own—customize your AI experience',
+    },
+    {
+      icon: '🌟',
+      title: 'Transparent',
+      description: '100% open-source, community-driven development',
+    },
+  ];
 
-  // Load threads from Supabase when user is authenticated
-  useEffect(() => {
-    const load = async () => {
-      // In guest mode, never touch DB
-      if (guestMode) {
-        return
-      }
-      if (!user?.id) {
-        // In guest mode, keep local threads; otherwise clear when logged out
-        setThreads([])
-        setActiveThreadId(null)
-        return
-      }
-      try {
-        const dbThreads = await fetchThreads(user.id)
-        setThreads(dbThreads)
-        // Keep current active if still present, else pick most recent home thread
-        if (dbThreads.length > 0) {
-          const homeThreads = dbThreads.filter(t => t.pageType === 'home')
-          const preferredThread = activeProjectId 
-            ? homeThreads.find(t => t.projectId === activeProjectId)
-            : homeThreads[0]
-          setActiveThreadId((prev) => {
-            if (prev && dbThreads.some(t => t.id === prev && t.pageType === 'home')) {
-              return prev
-            }
-            return preferredThread?.id || null
-          })
-        } else {
-          setActiveThreadId(null)
-        }
-      } catch (e) {
-        console.warn('Failed to load threads from Supabase:', e)
-      }
-    }
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, activeProjectId])
-
-  // Header shows no brand logo; the chat avatar displays model logo instead
-
-  // Handle edit message functionality
-  const handleEditMessage = useCallback((messageId: string, content: string) => {
-    setEditingMessage(content)
-  }, [])
-
-  // Handle share message functionality  
-  const handleShareMessage = useCallback((message: ChatMessage) => {
-    if (!activeThread) return;
-    
-    // Create a temporary thread with just this message for sharing
-    const messageThread: ChatThread = {
-      ...activeThread,
-      messages: [message],
-      title: `Shared Message: ${message.content.slice(0, 50)}...`
-    };
-    
-    // Use the ShareButton logic directly
-    import('@/lib/sharing/shareService').then(({ ShareService }) => {
-      const shareService = new ShareService();
-      shareService.generateShareableUrl(messageThread).then(result => {
-        if (result.success && result.url) {
-          shareService.copyToClipboard(result.url).then(copySuccess => {
-            if (copySuccess) {
-              toast.success("Message link copied to clipboard!");
-            } else {
-              toast.info("Clipboard access failed. Link: " + result.url);
-            }
-          });
-        } else {
-          toast.error(result.error || "Failed to create share link");
-        }
-      });
-    });
-  }, [activeThread])
-
-  // When user submits text, also record it into a thread shown in the sidebar
-  const handleSubmit = useCallback(async (text: string) => {
-    const content = text.trim()
-    if (!content) {
-      // Ensure loader is off for empty submissions
-      chatRef.current?.setLoading(false)
-      return;
-    }
-    
-    // Check if user is authenticated, allow guest mode bypass
-    if (!user?.id && !guestMode) {
-      setAuthModalOpen(true)
-      // Ensure loader is off if auth required
-      chatRef.current?.setLoading(false)
-      return
-    }
-    
-    // Clear editing state when submitting
-    setEditingMessage('')
-    
-    // Create thread if none exists
-    let createdThreadTemp: ChatThread | null = null
-    if (!activeThreadId) {
-      const newTitle = content.length > 60 ? content.slice(0, 57) + '…' : content
-      if (guestMode) {
-        const localId = (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
-          ? (crypto as any).randomUUID()
-          : `guest-${Date.now()}`
-        const createdLocal: ChatThread = {
-          id: localId,
-          title: newTitle,
-          messages: [],
-          createdAt: Date.now(),
-          projectId: activeProjectId || undefined,
-          pageType: 'home',
-        }
-        setThreads((prev) => [createdLocal, ...prev])
-        setActiveThreadId(createdLocal.id)
-        createdThreadTemp = createdLocal
-      } else if (user?.id) {
-        try {
-          const created = await createThreadDb({
-            userId: user.id,
-            title: newTitle,
-            projectId: activeProjectId || null,
-            pageType: 'home',
-            initialMessage: null,
-          })
-          setThreads((prev) => [created, ...prev])
-          setActiveThreadId(created.id)
-          createdThreadTemp = created
-        } catch (e) {
-          console.error('❌ Failed to create thread:', e)
-          return;
-        }
-      }
-    }
-    
-    // Show loading dots immediately with model type detection
-    const modelType = selectedHomeModel?.category || 'text'
-    chatRef.current?.setLoading(true, { 
-      modelLabel: selectedHomeModel?.label,
-      modelType: modelType as 'text' | 'image' | 'audio'
-    })
-
-    // Get current thread immediately - no timeout needed
-    const currentThread = createdThreadTemp
-      || threads.find(t => t.id === activeThreadId)
-      || threads.find(t => t.id === threads[0]?.id);
-    if (currentThread && selectedHomeModel) {
-      const currentChatActions = createChatActions({
-        threads,
-        setThreads,
-        activeThread: currentThread,
-        setActiveId: setActiveThreadId,
-        setLoadingIds: () => {}, // Disabled - using ChatInterface loading instead
-        setLoadingIdsInit: () => {}, // Disabled - using ChatInterface loading instead
-        selectedModels: [selectedHomeModel],
-        keys: apiKeys,
-        userId: user?.id || undefined,
-      });
-      
-      try {
-        await currentChatActions.send(content)
-        
-        // Save user message to database
-        if (user?.id && currentThread?.id) {
-          const userMsg: ChatMessage = { 
-            role: 'user', 
-            content: content, 
-            ts: Date.now() 
-          };
-          try {
-            await addMessageDb({
-              userId: user.id,
-              chatId: currentThread.id,
-              message: userMsg,
-            });
-          } catch (e) {
-            console.error('Failed to save user message to DB:', e);
-          }
-        }
-        
-        // Clear loading immediately after send completes
-        chatRef.current?.setLoading(false)
-      } catch (e) {
-        console.error('❌ Failed to send message via chat actions:', e)
-        chatRef.current?.setLoading(false)
-      }
-    } else {
-      console.warn('⚠️ Cannot send message - no thread or model:', { 
-        hasCurrentThread: !!currentThread, 
-        hasSelectedModel: !!selectedHomeModel 
-      });
-      chatRef.current?.setLoading(false)
-    }
-  }, [user, activeProjectId, activeThreadId, threads, selectedHomeModel, apiKeys, setThreads, setActiveThreadId])
-
-  // Expose handlers to window for ChatInterface to access
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.handleEditMessage = handleEditMessage;
-      window.handleShareMessage = handleShareMessage;
-      window.handleSubmit = handleSubmit;
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        delete window.handleEditMessage;
-        delete window.handleShareMessage;
-        delete window.handleSubmit;
-      }
-    }
-  }, [handleSubmit, handleShareMessage, handleEditMessage]);
-
-  // Load messages into ChatInterface when active thread changes
-  useEffect(() => {
-    if (chatRef.current && activeThread) {
-      // Always load messages, even if empty array
-      const convertedMessages = (activeThread.messages || []).map((msg, index) => {
-        const base: {
-          id: string;
-          content: string;
-          role: "user" | "assistant";
-          timestamp: Date;
-          avatarUrl?: string;
-          avatarAlt?: string;
-        } = {
-          id: `${activeThread.id}-${msg.ts || Date.now()}-${index}`,
-          content: msg.content,
-          role: msg.role as "user" | "assistant",
-          timestamp: new Date(msg.ts || Date.now()),
-        }
-        if (msg.role === 'assistant') {
-          const id = (msg.modelId || '').toLowerCase()
-          const prov = (msg.provider || '').toLowerCase()
-          const txt = `${id} ${prov}`
-          let avatarUrl = '/brand.svg'
-          let avatarAlt = 'AI Assistant'
-          if (/openai|\bgpt\b|^gpt-|\bo3\b|\bo4\b/.test(txt)) {
-            avatarUrl = 'https://cdn.simpleicons.org/openai/ffffff'
-            avatarAlt = 'OpenAI / ChatGPT'
-          } else if (/anthropic|claude/.test(txt)) {
-            avatarUrl = 'https://cdn.simpleicons.org/anthropic/ffffff'
-            avatarAlt = 'Anthropic / Claude'
-          } else if (/grok|xai/.test(txt)) {
-            // Placeholder using X icon for Grok/xAI
-            avatarUrl = 'https://cdn.simpleicons.org/x/ffffff'
-            avatarAlt = 'Grok / xAI'
-          }
-          return { ...base, avatarUrl, avatarAlt }
-        }
-        return base
-      });
-      chatRef.current.loadMessages(convertedMessages);
-    }
-  }, [activeThread]);
+  const howitWorks = [
+    {
+      icon: '1',
+      title: 'Start Chatting',
+      description:
+        'Use default models instantly or add your own API keys for personalized access to premium AI models',
+    },
+    {
+      icon: '2',
+      title: 'Ask Your Question',
+      description:
+        'From creative writing to complex coding problems—ask anything and get intelligent responses',
+    },
+    {
+      icon: '3',
+      title: 'Compare AI Responses',
+      description:
+        'View side-by-side results from different models to find the perfect AI for your specific needs',
+    },
+  ];
 
   return (
-    <div className={cn("min-h-screen w-full relative", isDark ? "dark" : "")}> 
-      {/* SEO: Primary page heading for branded queries */}
-      <h1 className="sr-only">
-        Open Fiesta — chat and compare 300+ AI models (OpenAI, Claude, Gemini, DeepSeek, Grok) in one place
-      </h1>
-
+    <main className={cn('min-h-screen w-full relative', isDark ? 'dark' : '')}>
       {/* Background */}
       {isDark ? (
         <div
-          className="absolute inset-0 z-0"
+          className="fixed inset-0 z-0"
           style={{
             background:
-              "linear-gradient(0deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6)), radial-gradient(68% 58% at 50% 50%, #c81e3a 0%, #a51d35 16%, #7d1a2f 32%, #591828 46%, #3c1722 60%, #2a151d 72%, #1f1317 84%, #141013 94%, #0a0a0a 100%), radial-gradient(90% 75% at 50% 50%, rgba(228,42,66,0.06) 0%, rgba(228,42,66,0) 55%), radial-gradient(150% 120% at 8% 8%, rgba(0,0,0,0) 42%, #0b0a0a 82%, #070707 100%), radial-gradient(150% 120% at 92% 92%, rgba(0,0,0,0) 42%, #0b0a0a 82%, #070707 100%), radial-gradient(60% 50% at 50% 60%, rgba(240,60,80,0.06), rgba(0,0,0,0) 60%), #050505",
+              'linear-gradient(0deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6)), radial-gradient(68% 58% at 50% 50%, #c81e3a 0%, #a51d35 16%, #7d1a2f 32%, #591828 46%, #3c1722 60%, #2a151d 72%, #1f1317 84%, #141013 94%, #0a0a0a 100%), radial-gradient(90% 75% at 50% 50%, rgba(228,42,66,0.06) 0%, rgba(228,42,66,0) 55%), radial-gradient(150% 120% at 8% 8%, rgba(0,0,0,0) 42%, #0b0a0a 82%, #070707 100%), radial-gradient(150% 120% at 92% 92%, rgba(0,0,0,0) 42%, #0b0a0a 82%, #070707 100%), radial-gradient(60% 50% at 50% 60%, rgba(240,60,80,0.06), rgba(0,0,0,0) 60%), #050505',
           }}
         />
       ) : (
-        /* Aurora Dream Corner Whispers */
         <div
-          className="absolute inset-0 z-0"
+          className="fixed inset-0 z-0"
           style={{
             background: `
               radial-gradient(ellipse 85% 65% at 8% 8%, rgba(175, 109, 255, 0.42), transparent 60%),
@@ -438,265 +178,468 @@ export default function OpenFiestaChat() {
       {/* Soft vignette for dark mode */}
       {isDark && (
         <div
-          className="absolute inset-0 z-0 pointer-events-none"
+          className="fixed inset-0 z-0 pointer-events-none"
           style={{
-            backgroundImage: "radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%)",
+            backgroundImage:
+              'radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%)',
             opacity: 0.95,
           }}
         />
       )}
 
-      {/* LaunchScreen splash overlay (same as compare page) */}
+      {/* Header */}
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99] }}
+        className="fixed top-0 w-full z-50 backdrop-blur-md bg-black/10"
+      >
+        <nav className="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <Image
+              src="/Web_logo.svg"
+              alt="Open Fiesta Logo"
+              width={120}
+              height={32}
+              className="h-8 w-auto"
+            />
+          </div>
+
+          {/* Desktop Navigation */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="hidden lg:flex items-center gap-8"
+          >
+            <a href="#features" className="text-gray-300 hover:text-white transition-colors">
+              Features
+            </a>
+            <a href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">
+              How It Works
+            </a>
+            <a href="#tech-stack" className="text-gray-300 hover:text-white transition-colors">
+              Tech Stack
+            </a>
+            <Link
+              href="https://github.com/NiladriHazra/Open-Fiesta"
+              className="text-gray-300 hover:text-white transition-colors"
+            >
+              GitHub
+            </Link>
+            <Link href="/chat">
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: [0, 1.2, 0.95, 1] }}
+                transition={{
+                  duration: 1.2,
+                  ease: 'easeOut',
+                  delay: 0.5,
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-2 py-1 cursor-pointer rounded-md bg-red-950 text-red-400 border border-red-400 border-b-2 hover:brightness-150 active:opacity-75 transition-all"
+              >
+                Get Started
+              </motion.button>
+            </Link>
+          </motion.div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="lg:hidden text-white p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {mobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+          </button>
+        </nav>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="lg:hidden bg-black/90 backdrop-blur-md"
+          >
+            <div className="px-4 py-4 space-y-4">
+              <a
+                href="#features"
+                className="block text-gray-300 hover:text-white transition-colors"
+              >
+                Features
+              </a>
+              <a
+                href="#how-it-works"
+                className="block text-gray-300 hover:text-white transition-colors"
+              >
+                How It Works
+              </a>
+              <a
+                href="#tech-stack"
+                className="block text-gray-300 hover:text-white transition-colors"
+              >
+                Tech Stack
+              </a>
+              <Link
+                href="https://github.com/NiladriHazra/Open-Fiesta"
+                className="block text-gray-300 hover:text-white transition-colors"
+              >
+                GitHub
+              </Link>
+              <Link href="/chat">
+                <button
+                  className={`group cursor-pointer relative overflow-hidden inline-flex w-auto max-w-full text-left px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-sm lg:text-base font-medium transition-all duration-300 backdrop-blur-lg shadow-md hover:shadow-xl will-change-transform ${
+                    isDark
+                      ? 'text-white/85 hover:text-white bg-gradient-to-br from-black/35 via-black/25 to-black/15 border border-white/30 hover:border-white/20 ring-1 ring-red-400/10 hover:ring-red-400/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)] hover:cursor-pointer'
+                      : 'text-orange-950/80 hover:text-orange-950 bg-gradient-to-br from-orange-50/80 to-orange-100/70 border border-orange-200/70 hover:border-orange-300'
+                  }`}
+                >
+                  Get Started
+                </button>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </motion.header>
+
+      {/* Splash Screen */}
       {showSplash && (
         <div className="fixed inset-0 z-[9999]">
-          <LaunchScreen backgroundClass={BACKGROUND_STYLES[theme.background].className} dismissed={isHydrated} />
+          <LaunchScreen
+            backgroundClass={BACKGROUND_STYLES[theme.background].className}
+            dismissed={isHydrated}
+          />
         </div>
       )}
 
+      {/* Hero Section */}
+      <section className="relative z-10 pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6">
+        <div className="container mx-auto text-center max-w-7xl">
+          <motion.h1
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-3xl sm:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 text-white bg-clip-text leading-tight"
+          >
+            Chat & Compare 300+ AI Models in One Place
+          </motion.h1>
 
-      <div className="relative z-10 px-3 lg:px-4 py-4 lg:py-6">
-        <div className="flex gap-3 lg:gap-4">
-          {/* Sidebar */}
-          <ThreadSidebar
-            sidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            threads={visibleHomeThreads}
-            activeId={activeThreadId}
-            onSelectThread={(id) => setActiveThreadId(id)}
-            onNewChat={async () => {
-              if (guestMode) {
-                const localId = (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
-                  ? (crypto as any).randomUUID()
-                  : `guest-${Date.now()}`
-                const createdLocal: ChatThread = {
-                  id: localId,
-                  title: 'New Chat',
-                  messages: [],
-                  createdAt: Date.now(),
-                  projectId: activeProjectId || undefined,
-                  pageType: 'home',
-                }
-                setThreads(prev => [createdLocal, ...prev])
-                setActiveThreadId(createdLocal.id)
-                return
-              }
-              if (!user?.id) {
-                setAuthModalOpen(true)
-                return
-              }
-              try {
-                const created = await createThreadDb({
-                  userId: user.id,
-                  title: 'New Chat',
-                  projectId: activeProjectId || null,
-                  pageType: 'home',
-                  initialMessage: null,
-                })
-                setThreads(prev => [created, ...prev])
-                setActiveThreadId(created.id)
-              } catch (e) {
-                console.error('Failed to create new chat:', e)
-              }
-            }}
-            mobileSidebarOpen={mobileSidebarOpen}
-            onCloseMobile={() => setMobileSidebarOpen(false)}
-            onOpenMobile={() => setMobileSidebarOpen(true)}
-            onDeleteThread={async (id) => {
-              if (!guestMode && user?.id) {
-                try {
-                  await deleteThreadDb(user.id, id);
-                } catch (e) {
-                  console.warn('Failed to delete home thread in DB, removing locally:', e);
-                }
-              } else if (!guestMode && !user?.id) {
-                // Not authenticated and not in guest mode -> do nothing
-                return;
-              }
-              setThreads((prev) => {
-                const next = prev.filter((t) => t.id !== id);
-                if (activeThreadId === id) {
-                  const inScope = next.filter((t) => t.pageType === 'home');
-                  const nextInScope =
-                    (activeProjectId ? inScope.find((t) => t.projectId === activeProjectId) : inScope[0])
-                      ?.id ?? null;
-                  setActiveThreadId(nextInScope);
-                }
-                return next;
-              });
-            }}
-            selectedModels={selectedHomeModel ? [selectedHomeModel] : []}
-            projects={projects}
-            activeProjectId={activeProjectId}
-            onSelectProject={selectProject}
-            onCreateProject={handleCreateProject}
-            onUpdateProject={handleEditProject}
-            onDeleteProject={deleteProject}
-          />
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-base sm:text-xl lg:text-2xl text-gray-300 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed px-4"
+          >
+            Access top AI like OpenAI, Gemini, Claude & more—instantly, securely, and reliably.
+            Built for developers, researchers, and AI enthusiasts.
+          </motion.p>
 
-        {/* Main Content */}
-        <div className="flex-1 min-w-0 flex flex-col h-[calc(100vh-2rem)] lg:h-[calc(100vh-3rem)] overflow-hidden relative">
-          {/* Mobile Header with Hamburger */}
-          <div className={cn(
-            "lg:hidden flex items-center justify-between p-4 border-b",
-            isDark ? "border-white/10" : "border-zinc-200"
-          )}>
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              className={cn(
-                "inline-flex items-center justify-center h-9 w-9 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95",
-                isDark
-                  ? "bg-gradient-to-r from-white/12 to-white/8 border border-white/15 text-white hover:from-white/18 hover:to-white/12 hover:border-white/25 backdrop-blur-sm shadow-lg"
-                  : "bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 shadow-sm"
-              )}
-              aria-label="Open menu"
-              title="Menu"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            {/* Right: Compare (small) + Actions trigger (mobile) */}
-            <div className="relative flex items-center gap-2">
-              <Link
-                href="/compare"
-                  className={cn(
-                    "inline-block font-medium overflow-hidden relative px-2 py-1 rounded-md outline-none duration-300 group text-[10px]",
-                    isDark
-                      ? "bg-red-950 text-red-400 border border-red-400 border-b-2 hover:brightness-150 hover:border-t-2 hover:border-b active:opacity-75"
-                      : "bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 active:opacity-80"
-                  )}
-                >
-                  <span className="bg-red-400 shadow-red-400 absolute -top-[150%] left-0 inline-flex w-40 h-[3px] rounded-md opacity-50 group-hover:top-[150%] duration-500 shadow-[0_0_10px_10px_rgba(0,0,0,0.3)]"></span>
-                  Compare Models
-                </Link>
-                <button
-                  onClick={() => setMobileActionsOpen((v) => !v)}
-                  className={cn(
-                    "inline-flex items-center justify-center h-9 w-9 rounded-md shadow",
-                    isDark ? "border border-white/15 bg-white/5 hover:bg-white/10 text-white" : "border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700"
-                  )}
-                  aria-label="Open quick actions"
-                  title="Actions"
-                >
-                  {/* simple 2x2 dots icon */}
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-                    <circle cx="7" cy="7" r="2" />
-                    <circle cx="17" cy="7" r="2" />
-                    <circle cx="7" cy="17" r="2" />
-                    <circle cx="17" cy="17" r="2" />
-                  </svg>
-                </button>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4"
+          >
+            <Link href="/chat">
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}
+                whileTap={{ scale: 0.95 }}
+                className={`group cursor-pointer relative overflow-hidden inline-flex w-auto max-w-full text-left px-4 lg:px-6 py-3 lg:py-4 rounded-2xl text-sm lg:text-base font-medium transition-all duration-300 backdrop-blur-lg shadow-md hover:shadow-xl will-change-transform ${
+                  isDark
+                    ? 'text-white/85 hover:text-white bg-gradient-to-br from-black/35 via-black/25 to-black/15 border border-white/10 hover:border-white/20 ring-1 ring-red-400/10 hover:ring-red-400/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)] hover:cursor-pointer'
+                    : 'text-orange-950/80 hover:text-orange-950 bg-gradient-to-br from-orange-50/80 to-orange-100/70 border border-orange-200/70 hover:border-orange-300'
+                }`}
+              >
+                Try It Now - Free
+              </motion.button>
+            </Link>
 
-                {/* Inline Support button on mobile header */}
-                <div>
-                  <SupportDropdown theme={theme.mode === 'dark' ? 'dark' : 'light'} inline />
+            <Link href="https://github.com/NiladriHazra/Open-Fiesta">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto bg-black/30 backdrop-blur-sm border border-gray-600/30 text-gray-300 hover:text-white hover:bg-black/50 hover:border-white/40 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Open Source on GitHub
+              </motion.button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-7xl">
+          {/* Section Title */}
+          <motion.h2
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-16 text-white bg-clip-text"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          >
+            How It Works
+          </motion.h2>
+
+          {/* Steps Grid */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.3 }}
+            className="grid md:grid-cols-3 gap-6 sm:gap-12"
+          >
+            {howitWorks.map((step, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants} // 👈 child animation
+                className="text-center group"
+              >
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-950 backdrop-blur-sm border border-red-950 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 group-hover:bg-black/60 group-hover:border-red-950 transition-all">
+                  <span className="text-2xl sm:text-3xl font-bold text-white">{step.icon}</span>
                 </div>
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">
+                  {step.title}
+                </h3>
+                <p className="text-gray-300 leading-relaxed">{step.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
-                {mobileActionsOpen && (
-                  <div
-                    className={cn(
-                      "absolute right-0 top-11 z-50 rounded-xl shadow-xl p-2 flex items-center gap-2",
-                      isDark ? "border border-white/15 bg-black/60 backdrop-blur-md" : "border border-zinc-200 bg-white"
-                    )}
-                  >
-                    <button
-                      onClick={() => { setModelModalOpen(true); setMobileActionsOpen(false); }}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 text-xs h-9 w-9 justify-center rounded-md shadow",
-                        isDark ? "border border-white/15 bg-white/5 hover:bg-white/10 text-white" : "border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700"
-                      )}
-                      title="Change models"
-                      aria-label="Change models"
-                    >
-                      <Layers size={14} />
-                    </button>
-                    <CustomModels compact />
-                    <ThemeToggle compact />
-                    <Settings compact />
-                    <GithubStar owner="NiladriHazra" repo="Open-Fiesta" />
-                  </div>
-                )}
+      {/* Key Features */}
+      {/* <section id="features" className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-7xl">
+          <h2
+            
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-16 bg-clip-text text-white"
+          >
+            Powerful Features
+          </h2>
+          
+          <div className="snap-y snap-mandatory overflow-y-auto flex gap-6 sm:gap-8 px-2 py-4">
+            {features.map((feature, index) => (
+              <div key={index}
+                
+                className="bg-black/20 snap-center backdrop-blur-sm border border-white/10 rounded-2xl p-6 sm:p-8 transition-all group cursor-pointer"
+              >
+                <div className="text-3xl sm:text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-300 leading-relaxed">{feature.description}</p>
               </div>
-            </div>
-            {/* Top bar - Desktop only */}
-            <div className="hidden lg:block">
-              <HeaderBar
-                onOpenMenu={() => setMobileSidebarOpen(true)}
-                title="Open Fiesta"
-                githubOwner="NiladriHazra"
-                githubRepo="Open-Fiesta"
-                onOpenModelsModal={() => setModelModalOpen(true)}
-                showCompareButton
-                className="-mr-3 sm:mr-0"
-                hideHomeButton={true}
-              />
-            </div>
-            {/* Use ChatInterface but hide its input; we provide HomeAiInput with model selector */}
-            <ChatInterface ref={chatRef} hideInput />
-            <div className={cn(
-              "absolute bottom-0 left-0 right-0 p-4 lg:p-6 bg-gradient-to-t to-transparent pointer-events-none",
-              isDark ? "from-black/20" : "from-white/5"
-            )}>
-              <div className="pointer-events-auto">
-                <HomeAiInput
-                  isDark={isDark}
-                  modelSelectorLabel={selectedHomeModel ? selectedHomeModel.label : "Choose model"}
-                  onOpenModelSelector={() => setModelModalOpen(true)}
-                  onSubmit={handleSubmit}
-                  initialValue={editingMessage}
-                  onClear={() => setEditingMessage('')}
-                />
-              </div>
-            </div>
-            <ModelsModal
-              open={modelModalOpen}
-              onClose={() => setModelModalOpen(false)}
-              selectedIds={selectedHomeModel ? [selectedHomeModel.id] : []}
-              selectedModels={selectedHomeModel ? [selectedHomeModel] : []}
-              customModels={customModels}
-              onToggle={(id) => {
-                setSelectedHomeModelId((prev) => (prev === id ? "" : id))
-                // Close after picking to mimic single-select UX
-                setModelModalOpen(false)
-              }}
-            />
+            ))}
           </div>
         </div>
-      </div>
+      </section> */}
 
-      <AuthModal 
-        isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
-      />
+      <section id="features" className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center bg-clip-text text-white">
+          Powerful Features
+        </h2>
+        <ScrollCards features={features} />
+      </section>
 
-      <ProjectModal
-        open={projectModalOpen}
-        onClose={() => setProjectModalOpen(false)}
-        onSave={handleSaveProject}
-        project={editingProject}
-      />
+      {/* Example Prompts */}
+      <section className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-7xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-16 bg-clip-text text-white"
+          >
+            Try These Prompts
+          </motion.h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {examplePrompts.map((prompt, index) => (
+              <div
+                key={index}
+                onClick={()=>handleClick(prompt)}
+                className="bg-black/20 hover:scale-105 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4 sm:p-6 hover:bg-black/30 hover:border-red-900 transition-all cursor-pointer group"
+              >
+                <p className="text-gray-200 group-hover:text-white transition-colors text-sm sm:text-base">
+                  "{prompt}"
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* First-visit note modal */}
-      <FirstVisitNote
-        open={showFirstVisit}
-        onClose={() => {
-          setFirstVisitSeen(true)
-          setShowFirstVisit(false)
-        }}
-      />
+      {/* Tech Stack */}
+      <section id="tech-stack" className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-7xl">
+          {/* Title */}
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-16 bg-clip-text text-white"
+          >
+            Built with Modern Tech
+          </motion.h2>
 
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
-    </div>
-  )
+          {/* Grid */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.2 }}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-8"
+          >
+            {techStack.map((tech, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants} // 👈 Animate each card
+                className="text-center group"
+              >
+                <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl p-4 sm:p-6 hover:bg-black/30 transition-all hover:border-white/20 group-hover:scale-105">
+                  <div className="text-2xl sm:text-3xl mb-2 sm:mb-4">{tech.icon}</div>
+                  <h3 className="text-sm sm:text-base font-semibold text-white">{tech.name}</h3>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-7xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-16 bg-clip-text text-white"
+          >
+            Why Choose Open Fiesta?
+          </motion.h2>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.2 }}
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8"
+          >
+            {chooseOpenFiesta.map((benefit, index) => (
+              <motion.div className="text-center" key={index} variants={itemVariants}>
+                <div className="w-16 h-16 bg-black/40 backdrop-blur-sm border border-yellow-500/30 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <span className="text-2xl">{benefit.icon}</span>
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">{benefit.title}</h3>
+                <p className="text-gray-300 text-sm sm:text-base">{benefit.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* GitHub Stats & CTA */}
+      <section className="relative z-10 py-12 sm:py-20 px-4 sm:px-6">
+        <div className="container mx-auto max-w-4xl text-center">
+          <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-3xl p-6 sm:p-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.3 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-clip-text text-white"
+            >
+              Join the Community
+            </motion.h2>
+            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8">
+              Open Fiesta has gained{' '}
+              <span className="text-orange-400 font-semibold">892 stars</span> and{' '}
+              <span className="text-blue-400 font-semibold">165 forks</span> from developers
+              worldwide
+            </p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: false, amount: 0.3 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link href="/chat">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-black/40 cursor-pointer backdrop-blur-sm border border-red-900 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold hover:bg-black/60 hover:border-red-800 hover:shadow-2xl hover:shadow-red-800 transition-all transform hover:scale-105 text-base sm:text-lg"
+                >
+                  Start Your First Chat
+                </motion.button>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 py-8 sm:py-12 px-4 sm:px-6 border-t border-white/10">
+        <div className="container mx-auto max-w-7xl">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-4">
+              <Image
+                src="/Web_logo.svg"
+                alt="Open Fiesta Logo"
+                width={100}
+                height={26}
+                className="h-6 w-auto"
+              />
+              <span className="text-gray-400 text-sm">Open Source AI Chat Platform</span>
+            </div>
+            <div className="flex gap-6 text-sm">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Privacy
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Terms
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Docs
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Support
+              </a>
+            </div>
+          </div>
+          <div className="text-center mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-white/5">
+            <p className="text-gray-500 text-sm">
+              &copy; 2025 Open Fiesta. Built with ❤️ by the community.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
 }
