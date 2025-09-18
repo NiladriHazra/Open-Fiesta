@@ -6,7 +6,9 @@
   background: rgba(24, 24, 27, 0.95) !important;
   border: 1px solid rgba(113, 113, 122, 0.5) !important;
   color: rgb(244, 244, 245) !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
   backdrop-filter: blur(4px) !important;
   border-radius: 0.5rem !important;
 }
@@ -128,6 +130,8 @@
   /* Badge System Variables */
   --badge-pro-background: rgba(228, 42, 66, 0.15);
   --badge-pro-text: rgb(252, 211, 77);
+  --badge-pro-shadow-border-dark: rgb(252, 211, 77, 0.4);
+  --badge-pro-shadow-border-light: rgba(212, 163, 0, 0.85);
   --badge-pro-border: rgba(228, 42, 66, 0.3);
   --badge-pro-glow: rgba(228, 42, 66, 0.3);
   --badge-free-background: rgba(16, 185, 129, 0.15);
@@ -473,14 +477,14 @@
 
 /* Reusable accent action styles */
 .accent-action-fill {
-  background: var(--accent-interactive-primary);
+  background: var(--accent-tertiary);
   color: #fff;
   transition:
     background 0.2s ease-in-out,
     box-shadow 0.2s ease-in-out;
 }
 .accent-action-fill:hover {
-  background: var(--accent-interactive-hover);
+  background: var(--accent-primary);
 }
 .accent-action-fill:active {
   background: var(--accent-interactive-active);
@@ -488,6 +492,56 @@
 .accent-action-ring:focus-visible {
   box-shadow: 0 0 0 3px var(--accent-interactive-focus);
 }
+/* todo in next PR */
+/* .magic-prompt-enhancer {
+  background-color: black;
+  position: relative;
+  z-index: 1;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.magic-prompt-enhancer::after,
+.magic-prompt-enhancer::before {
+  content: '';
+  position: absolute;
+  height: calc(100% + 6px);
+  width: calc(100% + 6px);
+  top: 50%;
+  left: 50%;
+  top: -3px;
+  left: -3px;
+  bottom: -3px;
+  right: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(from var(--angle), #ff4545 10%, #00FF45 68%, #006aff 75%, #ff0095 80%, #ff4545 100%);
+  animation:
+  4s spin linear infinite; */
+  /* spin 8s cubic-bezier(0.2, 0, 0, 1) infinite; */
+  /* ae-f 1s cubic-bezier(0.4, 0, 0.2, 1) 4s forwards; */
+  /* padding: 6px; */
+  /* background: linear-gradient(135deg, #ff4545, #00ff99, #006aff, #ff0095, #00ff99, #006aff, #ff0095); */
+  /* transform: translate(-50%, -50%); */
+/* }
+  
+  @keyframes spin {
+  from {
+    --angle: 0deg;
+  }
+  to {
+    --angle: 360deg;
+  }
+}
+
+.magic-prompt-enhancer::before {
+  filter: blur(1.5rem) opacity(0.5);
+
+} */
 
 .accent-dot {
   background: var(--accent-interactive-primary);
@@ -825,7 +879,7 @@ body.light * {
 
 /* High-contrast search toggle (stands out in monochrome/black accent) */
 .search-toggle {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  /* background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06)); */
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: var(--accent-interactive-primary);
   -webkit-backdrop-filter: blur(4px);
@@ -853,11 +907,11 @@ body.light * {
 .chatinput-default .chat-input-shell:hover {
   border-color: rgba(255, 255, 255, 0.18);
 }
-.chatinput-default .chat-input-shell:focus-within {
+/* .chatinput-default .chat-input-shell:focus-within {
   box-shadow:
     0 0 0 1px var(--accent-interactive-primary),
     0 0 0 3px var(--accent-interactive-focus);
-}
+} */
 
 .chatinput-frosty .chat-input-shell {
   background: rgba(14, 13, 13, 0.52);
@@ -882,20 +936,21 @@ body.light * {
   color: #fafafa;
 }
 .search-toggle[data-active='true'] {
-  background: linear-gradient(
+  color: var(--accent-interactive-primary);
+  /* background: linear-gradient(
     135deg,
     var(--accent-interactive-primary),
     var(--accent-interactive-hover)
   );
-  color: #fff;
-  border-color: var(--accent-interactive-primary);
+  color: #fff; */
+  /* border-color: var(--accent-interactive-primary);
   box-shadow:
     0 0 0 1px var(--accent-interactive-focus),
-    0 0 12px -2px var(--accent-glow-soft);
+    0 0 12px -2px var(--accent-glow-soft); */
 }
-.search-toggle[data-active='true'] .search-toggle-label {
+/* .search-toggle[data-active='true'] .search-toggle-label {
   color: #fff;
-}
+} */
 .search-toggle:hover {
   border-color: rgba(255, 255, 255, 0.28);
 }
@@ -1181,7 +1236,7 @@ body.light * {
 
 /* Glassy Toast theme (neutral, blurred, accent progress) */
 .glass-toast {
-  border-radius: 12px !important;
+  border-radius: 999px !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   background: rgba(20, 20, 20, 0.55) !important;
   -webkit-backdrop-filter: blur(12px) saturate(140%);

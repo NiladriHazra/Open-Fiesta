@@ -442,7 +442,7 @@
 
 /* Reusable accent action styles */
 .accent-action-fill {
-  background: var(--accent-interactive-primary);
+  background: var(--accent-tertiary);
   color: #fff;
   transition:
     background 0.2s ease-in-out,
@@ -452,7 +452,7 @@
   background: var(--accent-interactive-hover);
 }
 .accent-action-fill:active {
-  background: var(--accent-interactive-active);
+  background: var(--accent-primary);
 }
 .accent-action-ring:focus-visible {
   box-shadow: 0 0 0 3px var(--accent-interactive-focus);
@@ -836,20 +836,21 @@ body.light * {
   color: #fafafa;
 }
 .search-toggle[data-active='true'] {
-  background: linear-gradient(
+  color: var(--accent-interactive-primary);
+  /* background: linear-gradient(
     135deg,
     var(--accent-interactive-primary),
     var(--accent-interactive-hover)
   );
-  color: #fff;
-  border-color: var(--accent-interactive-primary);
+  color: #fff; */
+  /* border-color: var(--accent-interactive-primary);
   box-shadow:
     0 0 0 1px var(--accent-interactive-focus),
-    0 0 12px -2px var(--accent-glow-soft);
+    0 0 12px -2px var(--accent-glow-soft); */
 }
-.search-toggle[data-active='true'] .search-toggle-label {
+/* .search-toggle[data-active='true'] .search-toggle-label {
   color: #fff;
-}
+} */
 .search-toggle:hover {
   border-color: rgba(255, 255, 255, 0.28);
 }
@@ -1062,15 +1063,6 @@ body.light * {
   transform: translateX(0.9rem);
 }
 
-/* AI Chat Box toolbar background */
-.ai-toolbar-bg {
-  background-color: rgba(0, 0, 0, 0.52);
-}
-
-.dark .ai-toolbar-bg {
-  background-color: rgba(14, 13, 13, 0.52);
-}
-
 /* Image skeleton premium animations */
 @keyframes img-sweep {
   0% {
@@ -1128,8 +1120,8 @@ body.light * {
 :root.dark .compare-page::before {
   background:
     radial-gradient(1000px 600px at 50% 10%, rgba(160, 40, 40, 0.15), transparent 60%),
-    radial-gradient(800px 500px at 20% 80%, rgba(160, 40, 40, 0.10), transparent 70%),
-    linear-gradient(to bottom, rgba(3, 3, 3, 0.85), rgba(5, 5, 5, 0.90));
+    radial-gradient(800px 500px at 20% 80%, rgba(160, 40, 40, 0.1), transparent 70%),
+    linear-gradient(to bottom, rgba(3, 3, 3, 0.85), rgba(5, 5, 5, 0.9));
   opacity: 1;
 }
 :root:not(.dark) .compare-page::before {
@@ -1156,20 +1148,13 @@ body.light * {
 
 /* Glassmorphism for chat cards (dark theme only) */
 :root.dark .compare-page .group.relative.rounded-lg {
-  background: rgba(10, 10, 10, 0.50) !important;
+  background: rgba(10, 10, 10, 0.5) !important;
   -webkit-backdrop-filter: blur(18px) saturate(130%);
   backdrop-filter: blur(18px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow:
-    0 14px 34px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.25);
 }
 :root.dark .compare-page .group.relative.rounded-lg:hover {
   background: rgba(14, 14, 14, 0.56) !important;
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 :root.dark .compare-page .group.relative.rounded-lg:focus-within {
   outline: none;
@@ -1185,17 +1170,10 @@ body.light * {
   background: rgba(255, 255, 255, 0.25) !important;
   -webkit-backdrop-filter: blur(12px) saturate(150%);
   backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
 }
 :root:not(.dark) .compare-page .group.relative.rounded-lg:hover {
-  background: rgba(255, 255, 255, 0.35) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.3) !important;
 }
 :root:not(.dark) .compare-page .group.relative.rounded-lg:focus-within {
   outline: none;
@@ -1207,8 +1185,8 @@ body.light * {
 }
 
 /* Remove grey pill around the Thinking indicator (compare-only) */
-.compare-page [class*="inline-flex"][class*="rounded-full"][class*="ring-1"],
-.compare-page [class*="bg-white/10"][class*="ring-1"][class*="rounded-full"] {
+.compare-page [class*='inline-flex'][class*='rounded-full'][class*='ring-1'],
+.compare-page [class*='bg-white/10'][class*='ring-1'][class*='rounded-full'] {
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -1226,7 +1204,7 @@ body.light * {
 
 /* Remove bubble background/ring from assistant content blocks */
 .compare-page .max-w\[72ch\].rounded-2xl,
-.compare-page .group.relative.rounded-lg [class*="max-w"][class*="rounded-2xl"] {
+.compare-page .group.relative.rounded-lg [class*='max-w'][class*='rounded-2xl'] {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
